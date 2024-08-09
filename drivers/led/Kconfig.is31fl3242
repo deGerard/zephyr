@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Endor AG
+# Copyright (c) 2024 Gerard Koskamp
+# SPDX-License-Identifier: Apache-2.0
+
+config IS31FL3242
+	bool "IS31FL3242 LED driver"
+	default y
+	depends on DT_HAS_ISSI_IS31FL3242_ENABLED
+	select I2C
+	help
+	  Enable LED driver for Lumissil Microsystems (a division of ISSI)
+	  IS31FL3242. This chip supports up to 12 PWM controlled LEDs.

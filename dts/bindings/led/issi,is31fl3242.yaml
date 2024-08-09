@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Endor AG
+# Copyright (c) 2024 Gerard Koskamp
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  is31fl3242 LED driver for Lumissil Microsystems (a division of ISSI)
+
+compatible: "issi,is31fl3242"
+
+include: i2c-device.yaml
