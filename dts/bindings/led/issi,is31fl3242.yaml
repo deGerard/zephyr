@@ -8,3 +8,17 @@ description: |
 compatible: "issi,is31fl3242"
 
 include: i2c-device.yaml
+
+properties:
+  global-output-current:
+    type: int
+    default: 128
+    description: Output current of white channel in 0.1875 mA (0-48 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+                 According to the datasheet this value should not be les then 32
+
+  scaling-control:
+    type: array
+    default: [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+    description: This are the values set in the current scaling control registers
+

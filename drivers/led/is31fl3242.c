@@ -34,11 +34,14 @@
 #define IS31FL3242_REG_RESET			0x7F
 
 #define IS31FL3242_MAX_LEDS				12
+#define IS31FL3242_MAX_GLOBAL_CURRENT	48
 
 LOG_MODULE_REGISTER(is31fl3242, CONFIG_LED_LOG_LEVEL);
 
 struct is31fl3242_cfg {
 	struct i2c_dt_spec i2c;
+	uint8_t global_current;
+	const uint8_t *scaling_control;
 };
 
 static int is31fl3242_write_buffer(const struct i2c_dt_spec *i2c,
@@ -138,10 +141,11 @@ static int is31fl3242_led_off(const struct device *dev, uint32_t led)
 	return is31fl3242_led_set_brightness(dev, led, 0);
 }
 
-static int is31fl3242_init_registers(const struct i2c_dt_spec *i2c)
+static int is31fl3242_init_registers(const struct is31fl3242_cfg *config)
 {
 	int i;
 	int status;
+	const struct i2c_dt_spec *i2c = &config->i2c;
 
 	/* Set 8 bit mode, Phase choice to mode 1, no shutdown, bit 4 and 5 must be always set */
 	status = is31fl3242_write_reg(i2c, IS31FL3242_REG_CONFIG,
@@ -150,7 +154,7 @@ static int is31fl3242_init_registers(const struct i2c_dt_spec *i2c)
 		return status;
 	}
 	/* Global peak current is set to 24 mA */
-	status = is31fl3242_write_reg(i2c, IS31FL3242_REG_GCC, 0x80);
+	status = is31fl3242_write_reg(i2c, IS31FL3242_REG_GCC, config->global_current);
 	if (status < 0) {
 		return status;
 	}
@@ -167,9 +171,9 @@ static int is31fl3242_init_registers(const struct i2c_dt_spec *i2c)
 			return status;
 		}
 	}
-	/* Write 0xFF to all SL registers, configure all outputs to max configured peak current */
-	for (i = IS31FL3242_REG_SL_FIRST; i <= IS31FL3242_REG_SL_LAST; i++) {
-		status = is31fl3242_write_reg(i2c, i, 0xFF);
+	/* Write the scaling_control values to all SL registers, configure all outputs to max configured peak current */
+	for (i = 0; i < IS31FL3242_MAX_LEDS; i++) {
+		status = is31fl3242_write_reg(i2c, i + IS31FL3242_REG_SL_FIRST, config->scaling_control[i]);
 		if (status < 0) {
 			return status;
 		}
@@ -188,7 +192,7 @@ static int is31fl3242_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return is31fl3242_init_registers(&config->i2c);
+	return is31fl3242_init_registers(config);
 }
 
 static const struct led_driver_api is31fl3242_led_api = {
@@ -199,8 +203,17 @@ static const struct led_driver_api is31fl3242_led_api = {
 };
 
 #define IS31FL3242_INIT(id) \
+	BUILD_ASSERT(DT_INST_PROP(id, global_output_current) <= 255,\
+		"global-output-current must be between 0 and 255");	\
+	BUILD_ASSERT(DT_INST_PROP_LEN(id, scaling_control) == IS31FL3242_MAX_LEDS, \
+		"array length of scaling_control must be 12"); \
+	static const uint8_t scaling_control_##id[IS31FL3242_MAX_LEDS] = {		\
+		DT_INST_FOREACH_PROP_ELEM_SEP(id, scaling_control, DT_PROP_BY_IDX, (,))	\
+	}; \
 	static const struct is31fl3242_cfg is31fl3242_##id##_cfg = {	\
 		.i2c = I2C_DT_SPEC_INST_GET(id),			\
+		.global_current = DT_INST_PROP(id, global_output_current), \
+		.scaling_control = scaling_control_##id \
 	};								\
 	DEVICE_DT_INST_DEFINE(id, &is31fl3242_init, NULL, NULL,	\
 		&is31fl3242_##id##_cfg, POST_KERNEL,			\
