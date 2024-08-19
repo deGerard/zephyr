@@ -149,7 +149,10 @@ static int is31fl3242_init_registers(const struct is31fl3242_cfg *config)
 
 	/* Set 8 bit mode, Phase choice to mode 1, no shutdown, bit 4 and 5 must be always set */
 	status = is31fl3242_write_reg(i2c, IS31FL3242_REG_CONFIG,
-		IS31FL3242_REG_CONFIG_D4D5 | IS31FL3242_REG_CONFIG_PHC | IS31FL3242_REG_CONFIG_SSD);
+		IS31FL3242_REG_CONFIG_D4D5 |
+		IS31FL3242_REG_CONFIG_PHC |
+		IS31FL3242_REG_CONFIG_SSD |
+		IS31FL3242_REG_CONFIG_PWMM);
 	if (status < 0) {
 		return status;
 	}
